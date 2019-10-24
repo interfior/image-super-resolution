@@ -79,6 +79,8 @@ class Trainer:
             'feature_extractor': 'mse',
         },
         metrics={'generator': 'PSNR_Y'},
+        train_enable_batch_transform=False,
+        val_enable_batch_transform=False
     ):
         self.generator = generator
         self.discriminator = discriminator
@@ -129,6 +131,7 @@ class Trainer:
             patch_size=self.lr_patch_size,
             scale=self.scale,
             n_validation_samples=None,
+            train_enable_batch_transform=train_enable_batch_transform
         )
         self.valid_dh = DataHandler(
             lr_dir=lr_valid_dir,
@@ -136,6 +139,7 @@ class Trainer:
             patch_size=self.lr_patch_size,
             scale=self.scale,
             n_validation_samples=n_validation,
+            val_enable_batch_transform=val_enable_batch_transform
         )
 
     def _parameters_sanity_check(self):
@@ -319,7 +323,7 @@ class Trainer:
 
             epoch_start = time()
             for step in tqdm(range(steps_per_epoch)):
-                batch = self.train_dh.get_batch(batch_size, flatness=flatness)
+                batch, image_index = self.train_dh.get_batch(batch_size, flatness=flatness, step=step-1, num_steps=steps_per_epoch, should_return_index=True)
                 y_train = [batch['hr']]
                 training_losses = {}
 
@@ -352,7 +356,6 @@ class Trainer:
 
             elapsed_time = time() - epoch_start
             self.logger.info('Epoch {} took {:10.1f}s'.format(epoch, elapsed_time))
-
             validation_losses = self.model.evaluate(
                 validation_set['lr'], y_validation, batch_size=batch_size
             )

@@ -129,8 +129,8 @@ class TrainerHelper:
         """ Creates the paths used for managing logs and weights storage. """
 
         callback_paths = {}
-        callback_paths['weights'] = self.dirs['weights'] / self.basename / self.session_id
-        callback_paths['logs'] = self.dirs['logs'] / self.basename / self.session_id
+        callback_paths['weights'] = self.dirs['weights'] / self.basename / self.session_id.replace(':','_')
+        callback_paths['logs'] = self.dirs['logs'] / self.basename / self.session_id.replace(':','_')
         return callback_paths
 
     def _weights_name(self, callback_paths):

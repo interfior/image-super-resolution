@@ -17,7 +17,7 @@ class DataHandler:
             DataHandler is used to generate validation sets.
     """
 
-    def __init__(self, lr_dir, hr_dir, patch_size, scale, n_validation_samples=None):
+    def __init__(self, lr_dir, hr_dir, patch_size, scale, n_validation_samples=None, enable_batch_transform=False):
         self.folders = {'hr': hr_dir, 'lr': lr_dir}  # image folders
         self.extensions = ('.png', '.jpeg', '.jpg')  # admissible extension
         self.img_list = {}  # list of file names
@@ -28,6 +28,7 @@ class DataHandler:
         self.logger = get_logger(__name__)
         self._make_img_list()
         self._check_dataset()
+        self.enable_batch_transform = enable_batch_transform
 
     def _make_img_list(self):
         """ Creates a dictionary of lists of the acceptable images contained in lr_dir and hr_dir. """
@@ -154,7 +155,7 @@ class DataHandler:
         )
         return t_batch
 
-    def get_batch(self, batch_size, idx=None, flatness=0.0):
+    def get_batch(self, batch_size, idx=None, flatness=0.0, step=None, num_steps=None, should_return_index=False):
         """
         Returns a dictionary with keys ('lr', 'hr') containing training batches
         of Low Res and High Res image patches.
@@ -163,20 +164,29 @@ class DataHandler:
             batch_size: integer.
             flatness: float in [0,1], is the patch "flatness" threshold.
                 Determines what level of detail the patches need to meet. 0 means any patch is accepted.
-        """
-
+        """ 
         if not idx:
             # randomly select one image. idx is given at validation time.
-            idx = np.random.choice(range(len(self.img_list['hr'])))
+            if not step and not num_steps:
+                idx = np.random.choice(range(len(self.img_list['hr'])))
+            else:
+                split_array = np.array_split(np.array(self.img_list['hr']), num_steps)
+                idx = np.random.choice(
+                    range(len(
+                        list(split_array[step])
+                    ))
+                ) + (sum([len(x) for x in split_array[:step]]))
         img = {}
         for res in ['lr', 'hr']:
             img_path = os.path.join(self.folders[res], self.img_list[res][idx])
             img[res] = imageio.imread(img_path) / 255.0
         batch = self._crop_imgs(img, batch_size, flatness)
         transforms = np.random.randint(0, 3, (batch_size, 2))
-        batch['lr'] = self._transform_batch(batch['lr'], transforms)
-        batch['hr'] = self._transform_batch(batch['hr'], transforms)
-
+        if self.enable_batch_transform:
+            batch['lr'] = self._transform_batch(batch['lr'], transforms)
+            batch['hr'] = self._transform_batch(batch['hr'], transforms)
+        if should_return_index:
+            return batch, idx
         return batch
 
     def get_validation_batches(self, batch_size):
