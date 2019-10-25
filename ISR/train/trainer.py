@@ -131,7 +131,7 @@ class Trainer:
             patch_size=self.lr_patch_size,
             scale=self.scale,
             n_validation_samples=None,
-            train_enable_batch_transform=train_enable_batch_transform
+            enable_batch_transform=train_enable_batch_transform
         )
         self.valid_dh = DataHandler(
             lr_dir=lr_valid_dir,
@@ -139,7 +139,7 @@ class Trainer:
             patch_size=self.lr_patch_size,
             scale=self.scale,
             n_validation_samples=n_validation,
-            val_enable_batch_transform=val_enable_batch_transform
+            enable_batch_transform=val_enable_batch_transform
         )
 
     def _parameters_sanity_check(self):
