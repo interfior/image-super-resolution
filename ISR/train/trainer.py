@@ -232,12 +232,12 @@ class Trainer:
         """
         
         if self.weights_generator:
-            self.model.get_layer('generator').load_weights(self.weights_generator)
+            self.model.get_layer('generator').load_weights(str(self.weights_generator))
         
         if self.discriminator:
             if self.weights_discriminator:
-                self.model.get_layer('discriminator').load_weights(self.weights_discriminator)
-                self.discriminator.model.load_weights(self.weights_discriminator)
+                self.model.get_layer('discriminator').load_weights(str(self.weights_discriminator))
+                self.discriminator.model.load_weights(str(self.weights_discriminator))
     
     def _format_losses(self, prefix, losses, model_metrics):
         """ Creates a dictionary for tensorboard tracking. """
@@ -319,8 +319,13 @@ class Trainer:
                 self.logger.info('Current flatness treshold: {}'.format(flatness))
             
             epoch_start = time()
+            batch_indicies = self.train_dh.select_randomally_from_even_subsets(
+                list(self.train_dh.img_list.values())[0].shape[0],
+                steps_per_epoch
+            )
+
             for step in tqdm(range(steps_per_epoch)):
-                batch = self.train_dh.get_batch(batch_size, flatness=flatness)
+                batch = self.train_dh.get_batch(batch_size, idx=batch_indicies[step], flatness=flatness)
                 y_train = [batch['hr']]
                 training_losses = {}
                 

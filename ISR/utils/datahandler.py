@@ -31,6 +31,14 @@ class DataHandler:
         self._make_img_list()
         self._check_dataset()
     
+
+    def select_randomally_from_even_subsets(self, length_of_array, number_of_samples):
+        return np.concatenate([
+            np.random.choice(subset, 1, replace=False)
+            for subset in np.array_split(np.arange(length_of_array), number_of_samples)
+        ])
+
+
     def _make_img_list(self):
         """ Creates a dictionary of lists of the acceptable images contained in lr_dir and hr_dir. """
         
@@ -40,8 +48,9 @@ class DataHandler:
             self.img_list[res] = np.sort(file_names)
         
         if self.n_validation_samples:
-            samples = np.random.choice(
-                range(len(self.img_list['hr'])), self.n_validation_samples, replace=False
+            samples = self.select_randomally_from_even_subsets(
+                list(self.img_list.values())[0].shape[0],
+                self.n_validation_samples
             )
             for res in ['hr', 'lr']:
                 self.img_list[res] = self.img_list[res][samples]
@@ -128,23 +137,23 @@ class DataHandler:
     def _apply_transform(self, img, transform_selection):
         """ Rotates and flips input image according to transform_selection. """
         
-        rotate = {
-            0: lambda x: x,
-            1: lambda x: np.rot90(x, k=1, axes=(1, 0)),  # rotate right
-            2: lambda x: np.rot90(x, k=1, axes=(0, 1)),  # rotate left
-        }
+        # rotate = {
+        #     0: lambda x: x,
+        #     1: lambda x: np.rot90(x, k=1, axes=(1, 0)),  # rotate right
+        #     2: lambda x: np.rot90(x, k=1, axes=(0, 1)),  # rotate left
+        # }
         
-        flip = {
-            0: lambda x: x,
-            1: lambda x: np.flip(x, 0),  # flip along horizontal axis
-            2: lambda x: np.flip(x, 1),  # flip along vertical axis
-        }
+        # flip = {
+        #     0: lambda x: x,
+        #     1: lambda x: np.flip(x, 0),  # flip along horizontal axis
+        #     2: lambda x: np.flip(x, 1),  # flip along vertical axis
+        # }
         
-        rot_direction = transform_selection[0]
-        flip_axis = transform_selection[1]
+        # rot_direction = transform_selection[0]
+        # flip_axis = transform_selection[1]
         
-        img = rotate[rot_direction](img)
-        img = flip[flip_axis](img)
+        # img = rotate[rot_direction](img)
+        # img = flip[flip_axis](img)
         
         return img
     
@@ -166,7 +175,6 @@ class DataHandler:
             flatness: float in [0,1], is the patch "flatness" threshold.
                 Determines what level of detail the patches need to meet. 0 means any patch is accepted.
         """
-        
         if not idx:
             # randomly select one image. idx is given at validation time.
             idx = np.random.choice(range(len(self.img_list['hr'])))
